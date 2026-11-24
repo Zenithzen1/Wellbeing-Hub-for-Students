@@ -132,7 +132,41 @@ class Queue:
         return self.queue[self.front]
 
 class HashMap:
-    #TODO
+    def __init__(self):
+        self.map = {}
+
+    def __len__(self):
+        return len(self.map)
+
+    def __getitem__(self, key):
+        return self.map[key]
+
+    def __setitem__(self, key, value):
+        self.map[key] = value
+
+    def __delitem__(self, key):
+        del self.map[key]
+
+    def __contains__(self, key):
+        return key in self.map
+
+    def __iter__(self):
+        return iter(self.map)
+
+    def get(self, key, default=None):
+        return self.map.get(key, default)
+
+    def keys(self):
+        return self.map.keys()
+
+    def values(self):
+        return self.map.values()
+
+    def items(self):
+        return self.map.items()
+
+    def clear(self):
+        self.map.clear()
     pass
 
 class IndexedMinHeap:
