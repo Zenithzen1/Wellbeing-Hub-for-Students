@@ -304,6 +304,8 @@ class IntervalTree(AVLTree):
         return node.key[0] <= high and low <= node.key[1]
 
     def find_overlap(self, low, high):
+        if low > high:
+            raise ValueError("low must be <= high")
         node = self.root
         while node is not None:
             if self._overlaps(node, low, high):
@@ -315,6 +317,8 @@ class IntervalTree(AVLTree):
         return None
 
     def query(self, low, high):
+        if low > high:
+            raise ValueError("low must be <= high")
         result = DynamicArray()
         self._query(self.root, low, high, result)
         return result
