@@ -111,7 +111,6 @@ class Queue:
 
         if self.size > 0 and self.size == self.capacity // 4:
             self._resize(self.capacity // 2 )
-        
 
         return element
     
@@ -125,7 +124,127 @@ class HashMap:
     pass
 
 class IndexedMinHeap:
-    #TODO
+    def __init__(self):
+        """Empty queue. O(1)"""
+        self.arr = []
+        self.len = 0
+
+    def __len__(self): 
+        """Number of keys held. O(1)"""
+        return self.len
+
+    def _upheap(self, idx = 0):
+        curr = self.len - 1 if idx == 0 else idx
+        parent = (curr - 1) // 2
+        while curr != 0:
+            if self.arr[curr] < self.arr[parent]:
+                self.arr[curr], self.arr[parent] = self.arr[parent], self.arr[curr]
+
+                curr = parent
+                parent = (parent - 1) // 2
+            else:
+                break
+
+    def _downheap(self,  idx = None, limit = None):
+        curr = 0 if idx is None else idx
+        leftChild = 2 * curr + 1
+        rightChild = 2 * curr + 2
+
+        while leftChild < (self.len if limit is None else limit):
+            if rightChild < (self.len if limit is None else limit) and self.arr[rightChild] < self.arr[leftChild]:
+                smallerChild = rightChild
+            else:
+                smallerChild = leftChild
+
+            if self.arr[curr] <= self.arr[smallerChild]:
+                break
+
+            self.arr[curr], self.arr[smallerChild] = self.arr[smallerChild], self.arr[curr]
+            curr = smallerChild
+
+            leftChild = 2 * curr + 1
+            rightChild = 2 * curr + 2
+    
+    def insert(self, key): 
+        """Add a key. O(log n)"""
+        self.arr.append(key)
+        self.len += 1
+        self._upheap()
+    
+    def get_min(self): 
+        """Smallest key, kept. O(1)"""
+        if self.len == 0:
+            return None
+        return self.arr[0]
+
+
+    def extract_min(self): 
+        """Remove + return it. O(log n)"""
+
+        if self.len == 0:
+            return None
+        
+        self.arr[0], self.arr[self.len - 1] = self.arr[self.len - 1], self.arr[0]
+
+        minimum = self.arr.pop()
+        self.len -= 1
+
+        self._downheap()
+
+        return minimum
+
+        
+    def delete(self, key): 
+        """Remove one key. O(n) + O(log n)"""
+
+        found = False
+
+        for idx in range(self.len):
+            if self.arr[idx] == key:
+                self.arr[idx], self.arr[-1] = self.arr[-1], self.arr[idx]
+                found = True
+                break
+
+        if found:
+            remove = self.arr.pop()
+            self.len -= 1
+
+            if idx > 0 and self.arr[idx] < self.arr[(idx - 1) // 2]:
+                self._upheap(idx)
+            else:
+                self._downheap(idx)
+            return remove
+
+        else: 
+            return None
+    
+    def update_key(self, old, new): 
+        """Change a key. O(n) + O(log n)"""
+
+        found = False
+        
+        for idx in range(self.len):
+            if self.arr[idx] == old:
+                self.arr[idx] = new
+                found = True
+                break
+
+        if found:
+            if idx > 0 and self.arr[idx] < self.arr[(idx - 1) // 2]:
+                self._upheap(idx)
+            else:
+                self._downheap(idx)
+
+
+    def build_heap(self, array): 
+        """Heapify an array. O(n)"""
+
+        self.arr = array
+        self.len = len(array)
+
+        for i in range(len(array) // 2 - 1, -1, -1):
+            self._downheap(i) 
+
     pass
 
 class AVLTree:
