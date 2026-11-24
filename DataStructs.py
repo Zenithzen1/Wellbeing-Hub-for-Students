@@ -65,22 +65,60 @@ class DynamicArray:
 
 class Queue:
     def __init__(self):
-        self.queue = DynamicArray()
+        self.capacity = 2
+        self.queue = [None] * 2
 
-    def enqueue(self, element):
-        self.queue.insert(0, element)
-
-    def dequeue(self):
-        self.queue.pop()
-
-    def peek(self):
-        return self.queue[0]
-
-    def is_empty(self):
-        return self.len == 0
+        self.front = 0
+        self.rear = 0
+        self.size = 0
 
     def __len__(self):
-        return self.len
+        return self.size
+
+    def is_empty(self):
+        return not self.size
+
+    def _resize(self, newCapacity):
+        newArray = [None] * newCapacity
+
+        for i in range(self.size):
+            newArray[i] = self.queue[(self.front + i) % self.capacity]
+
+        self.queue = newArray
+        self.capacity = newCapacity
+        self.front = 0
+        self.rear = self.size
+
+
+    def enqueue(self, element):
+        if self.size == self.capacity:
+            self._resize(self.capacity * 2) 
+
+        self.queue[self.rear] = element
+        self.rear = (self.rear + 1) % self.capacity
+        self.size += 1
+
+    def dequeue(self):
+    
+        if self.size == 0:
+            raise IndexError("Dequeue from empty queue")
+
+        element = self.queue[self.front]
+        self.queue[self.front] = None
+
+        self.front = (self.front + 1) % self.capacity
+        self.size -= 1
+
+        if self.size > 0 and self.size == self.capacity // 4:
+            self._resize(self.capacity // 2 )
+        
+
+        return element
+    
+    def peek(self):
+        if self.size == 0:
+            raise IndexError("Peek from empty queue")
+        return self.queue[self.front]
 
 class HashMap:
     #TODO
