@@ -273,9 +273,62 @@ class AVLTree:
 
         return self._rebalance(node)
 
-class IntervalTree:
-    #TODO
-    pass
+class IntervalNode(AVLNode):
+    def __init__(self, key, value=None):
+        super().__init__(key, value)
+        self.maxHigh = key[1]
+
+
+class IntervalTree(AVLTree):
+    def _makeNode(self, key, value):
+        return IntervalNode(key, value)
+
+    def _update(self, node):
+        super()._update(node)
+        best = node.key[1]
+        if node.left is not None and node.left.maxHigh > best:
+            best = node.left.maxHigh
+        if node.right is not None and node.right.maxHigh > best:
+            best = node.right.maxHigh
+        node.maxHigh = best
+
+    def insert(self, low, high, value=None):
+        if low > high:
+            raise ValueError("low must be <= high")
+        super().insert((low, high), value)
+
+    def delete(self, low, high):
+        super().delete((low, high))
+
+    def _overlaps(self, node, low, high):
+        return node.key[0] <= high and low <= node.key[1]
+
+    def find_overlap(self, low, high):
+        node = self.root
+        while node is not None:
+            if self._overlaps(node, low, high):
+                return node.key
+            if node.left is not None and node.left.maxHigh >= low:
+                node = node.left
+            else:
+                node = node.right
+        return None
+
+    def query(self, low, high):
+        result = DynamicArray()
+        self._query(self.root, low, high, result)
+        return result
+
+    def _query(self, node, low, high, result):
+        if node is None or node.maxHigh < low:
+            return
+        self._query(node.left, low, high, result)
+        if self._overlaps(node, low, high):
+            result.append(node.key)
+        if node.key[0] <= high:
+            self._query(node.right, low, high, result)
+
+
 
 class Graph:
     #TODO
