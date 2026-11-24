@@ -9,6 +9,20 @@ class DynamicArray:
     def __len__(self):
         return self.size
 
+    def __getitem__(self, index):
+        if index < 0 or index >= self.size:
+            raise IndexError("Index out of bounds")
+        return self.array[index]
+
+    def __setitem__(self, index, element):
+        if index < 0 or index >= self.size:
+            raise IndexError("Index out of bounds")
+        self.array[index] = element
+
+    def __iter__(self):
+        for i in range(self.size):
+            yield self.array[i]
+
     def _resize(self, newCapacity):
         newArray = [None] * newCapacity
 
@@ -49,10 +63,8 @@ class DynamicArray:
             raise IndexError("Index out of bounds")
 
         element = self.array[index]
-        self.array[index] = None
 
-
-        for i in range(index, self.size):
+        for i in range(index, self.size - 1):
             self.array[i] = self.array[i + 1]
 
         self.size -= 1
@@ -128,17 +140,23 @@ class IndexedMinHeap:
         """Empty queue. O(1)"""
         self.arr = []
         self.len = 0
+        self.pos = {}   # key -> index in self.arr (keys must be unique + hashable)
 
-    def __len__(self): 
+    def __len__(self):
         """Number of keys held. O(1)"""
         return self.len
 
-    def _upheap(self, idx = 0):
-        curr = self.len - 1 if idx == 0 else idx
+    def _swap(self, i, j):
+        self.arr[i], self.arr[j] = self.arr[j], self.arr[i]
+        self.pos[self.arr[i]] = i
+        self.pos[self.arr[j]] = j
+
+    def _upheap(self, idx = None):
+        curr = self.len - 1 if idx is None else idx
         parent = (curr - 1) // 2
         while curr != 0:
             if self.arr[curr] < self.arr[parent]:
-                self.arr[curr], self.arr[parent] = self.arr[parent], self.arr[curr]
+                self._swap(curr, parent)
 
                 curr = parent
                 parent = (parent - 1) // 2
@@ -159,7 +177,7 @@ class IndexedMinHeap:
             if self.arr[curr] <= self.arr[smallerChild]:
                 break
 
-            self.arr[curr], self.arr[smallerChild] = self.arr[smallerChild], self.arr[curr]
+            self._swap(curr, smallerChild)
             curr = smallerChild
 
             leftChild = 2 * curr + 1
@@ -167,14 +185,18 @@ class IndexedMinHeap:
     
     def insert(self, key): 
         """Add a key. O(log n)"""
+        if key in self.pos:
+            raise ValueError("Key already in heap")
+
         self.arr.append(key)
+        self.pos[key] = self.len
         self.len += 1
         self._upheap()
     
     def get_min(self): 
         """Smallest key, kept. O(1)"""
         if self.len == 0:
-            return None
+            raise IndexError("get_min from empty heap")
         return self.arr[0]
 
 
@@ -182,11 +204,12 @@ class IndexedMinHeap:
         """Remove + return it. O(log n)"""
 
         if self.len == 0:
-            return None
+            raise IndexError("extract_min from empty heap")
         
-        self.arr[0], self.arr[self.len - 1] = self.arr[self.len - 1], self.arr[0]
+        self._swap(0, self.len - 1)
 
         minimum = self.arr.pop()
+        del self.pos[minimum]
         self.len -= 1
 
         self._downheap()
@@ -195,19 +218,20 @@ class IndexedMinHeap:
 
         
     def delete(self, key): 
-        """Remove one key. O(n) + O(log n)"""
+        """Remove one key. O(log n)"""
 
-        found = False
-
-        for idx in range(self.len):
-            if self.arr[idx] == key:
-                self.arr[idx], self.arr[-1] = self.arr[-1], self.arr[idx]
-                found = True
-                break
+        idx = self.pos.get(key)
+        found = idx is not None
 
         if found:
+            self._swap(idx, self.len - 1)
+
             remove = self.arr.pop()
+            del self.pos[remove]
             self.len -= 1
+
+            if idx == self.len:     # removed key was the last element, nothing to fix
+                return remove
 
             if idx > 0 and self.arr[idx] < self.arr[(idx - 1) // 2]:
                 self._upheap(idx)
@@ -215,37 +239,44 @@ class IndexedMinHeap:
                 self._downheap(idx)
             return remove
 
-        else: 
-            return None
+        else:
+            raise KeyError(key)
     
     def update_key(self, old, new): 
-        """Change a key. O(n) + O(log n)"""
+        """Change a key. O(log n)"""
 
-        found = False
-        
-        for idx in range(self.len):
-            if self.arr[idx] == old:
-                self.arr[idx] = new
-                found = True
-                break
+        idx = self.pos.get(old)
+        found = idx is not None
 
         if found:
+            if new != old and new in self.pos:
+                raise ValueError("Key already in heap")
+
+            del self.pos[old]
+            self.arr[idx] = new
+            self.pos[new] = idx
+
             if idx > 0 and self.arr[idx] < self.arr[(idx - 1) // 2]:
                 self._upheap(idx)
             else:
                 self._downheap(idx)
 
+        else:
+            raise KeyError(old)
 
-    def build_heap(self, array): 
+    def build_heap(self, array):
         """Heapify an array. O(n)"""
 
-        self.arr = array
+        pos = {key: i for i, key in enumerate(array)}
+        if len(pos) != len(array):
+            raise ValueError("Duplicate keys in array")
+
+        self.arr = list(array)
         self.len = len(array)
+        self.pos = pos
 
         for i in range(len(array) // 2 - 1, -1, -1):
-            self._downheap(i) 
-
-    pass
+            self._downheap(i)
 
 class AVLTree:
     #TODO
