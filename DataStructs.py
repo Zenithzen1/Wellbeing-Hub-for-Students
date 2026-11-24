@@ -1,8 +1,44 @@
 #Personal Implementation of Data Structures to use in Project
 
 class DynamicArray:
-    #TODO
-    pass
+    def __init__(self):
+        self.capacity = 2
+        self.size = 0
+        self.array = [None] * self.capacity
+
+    def __len__(self):
+        return self.size
+
+    def _resize(self, newCapacity):
+        newArray = [None] * newCapacity
+
+        for i in range(self.size):
+            newArray[i] = self.array[i]
+
+        self.array = newArray
+        self.capacity = newCapacity
+
+    def append(self, element):
+        if self.size == self.capacity:
+            self._resize( self.capacity * 2 )
+
+        self.array[self.size] = element
+        self.size += 1
+
+    def pop(self):
+
+        if self.size == 0:
+            raise IndexError("Pop from empty array")
+        
+        element = self.array[self.size - 1]
+        self.array[self.size - 1] = None
+
+        self.size -= 1
+
+        if (self.size > 0) and (self.size == self.capacity // 4):
+            self._resize( self.capacity // 2)
+
+        return element
 
 class Queue:
     def __init__(self):
