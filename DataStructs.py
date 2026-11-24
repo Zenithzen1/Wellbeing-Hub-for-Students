@@ -25,15 +25,35 @@ class DynamicArray:
         self.array[self.size] = element
         self.size += 1
 
-    def pop(self):
+    def insert(self, index, element):
+        if index < 0 or index > self.size:
+            raise IndexError("Index out of bounds")
+
+        if self.size == self.capacity:
+            self._resize( self.capacity * 2 )
+
+        for i in range(self.size, index, -1):
+            self.array[i] = self.array[i - 1]
+
+        self.array[index] = element
+        self.size += 1
+
+    def pop(self, index = None):
+        if index is None:
+            index = self.size - 1
 
         if self.size == 0:
             raise IndexError("Pop from empty array")
         
-        element = self.array[self.size - 1]
-        self.array[self.size - 1] = None
+        element = self.array[index]
+        self.array[index] = None
+
+
+        for i in range(index, self.size):
+            self.array[i] = self.array[i + 1]
 
         self.size -= 1
+        self.array[self.size] = None
 
         if (self.size > 0) and (self.size == self.capacity // 4):
             self._resize( self.capacity // 2)
