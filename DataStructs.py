@@ -44,7 +44,10 @@ class DynamicArray:
 
         if self.size == 0:
             raise IndexError("Pop from empty array")
-        
+
+        if index < 0 or index >= self.size:
+            raise IndexError("Index out of bounds")
+
         element = self.array[index]
         self.array[index] = None
 
@@ -62,17 +65,13 @@ class DynamicArray:
 
 class Queue:
     def __init__(self):
-        self.queue = []
-        self.len = 0
+        self.queue = DynamicArray()
 
-    def enqueue(self, val):
-        self.append(val)
-        self.len += 1
+    def enqueue(self, element):
+        self.queue.insert(0, element)
 
     def dequeue(self):
-        val = self.pop(0)
-        self.len -= 1
-        return val
+        self.queue.pop()
 
     def peek(self):
         return self.queue[0]
