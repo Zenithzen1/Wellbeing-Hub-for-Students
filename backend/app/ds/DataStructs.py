@@ -600,6 +600,81 @@ class AVLTree:
 
         return self._rebalance(node)
 
+    def find(self, key):
+        """Value stored under key. KeyError if missing. O(log n)"""
+        return self.search(key)
+
+    def height(self):
+        """Height of the tree (0 when empty). O(1)"""
+        return self._height(self.root)
+
+    def range(self, lo, hi):
+        """(key, value) pairs with lo <= key <= hi, in key order (plan section 6.2).
+
+        Goes left only if node.key > lo and right only if node.key < hi, so whole
+        subtrees outside [lo, hi] are skipped. O(log n + k) for k results.
+        """
+        result = DynamicArray()
+        if lo > hi:
+            return result
+        self._range(self.root, lo, hi, result)
+        return result
+
+    def _range(self, node, lo, hi, result):
+        if node is None:
+            return
+        if node.key > lo:
+            self._range(node.left, lo, hi, result)
+        if lo <= node.key <= hi:
+            result.append((node.key, node.value))
+        if node.key < hi:
+            self._range(node.right, lo, hi, result)
+
+    def next_k(self, after, k):
+        """The first k (key, value) pairs with key > after, in key order. O(log n + k)
+
+        An in-order walk with an explicit stack that never descends into a left
+        subtree whose keys are all <= after, and stops as soon as k pairs are found.
+        """
+        result = DynamicArray()
+        stack = []
+        node = self.root
+        while len(result) < k and (stack or node is not None):
+            if node is not None:
+                if node.key > after:
+                    stack.append(node)
+                    node = node.left
+                else:
+                    node = node.right    # node and its left subtree are all <= after
+            else:
+                node = stack.pop()
+                result.append((node.key, node.value))
+                node = node.right
+        return result
+
+    def check(self):
+        """Walk the whole tree and raise AssertionError if an invariant is broken:
+        strict BST order, stored heights, |balance factor| <= 1 and the size count.
+        Too slow for production (O(n)); used by the tests after every operation.
+        """
+        count = self._check(self.root, None, None)
+        if count != self.size:
+            raise AssertionError(f"size is {self.size} but the tree holds {count} nodes")
+
+    def _check(self, node, lo, hi):
+        """Checks the subtree whose keys must lie strictly between lo and hi; returns its node count."""
+        if node is None:
+            return 0
+        if (lo is not None and not lo < node.key) or (hi is not None and not node.key < hi):
+            raise AssertionError(f"BST order broken at key {node.key!r}")
+        count = 1 + self._check(node.left, lo, node.key) + self._check(node.right, node.key, hi)
+        expected = 1 + max(self._height(node.left), self._height(node.right))
+        if node.height != expected:
+            raise AssertionError(f"stored height {node.height} != {expected} at key {node.key!r}")
+        if abs(self._balance(node)) > 1:
+            raise AssertionError(f"balance factor {self._balance(node)} at key {node.key!r}")
+        return count
+
 class IntervalNode(AVLNode):
     def __init__(self, key, value=None):
         super().__init__(key, value)
