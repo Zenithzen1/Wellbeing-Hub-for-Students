@@ -26,3 +26,5 @@ Thumbs.db
 # Claude Code local settings
 .claude/
 CLAUDE.local.md
+frontend/.taste-skill/
+frontend/shots/
