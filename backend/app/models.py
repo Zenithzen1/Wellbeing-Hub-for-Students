@@ -10,7 +10,7 @@ carry the HMAC pseudonym only.
 
 from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, TypeDecorator, UniqueConstraint
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, TypeDecorator, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db import Base
@@ -37,6 +37,101 @@ class UTCDateTime(TypeDecorator):
 
 
 # TODO(all, Day 1): define the other tables here.
+
+
+# --- Counsellors, availability, bookings (plan section 4; owner: Aditya) -------------------
+
+class Counsellor(Base):
+    """Identity zone. One row per counsellor account.
+
+    account_id is the counsellor's row in `accounts`.
+    TODO(Rithwik): make it ForeignKey("accounts.id") once the Account table exists.
+    """
+
+    __tablename__ = "counsellors"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    account_id: Mapped[int] = mapped_column(Integer, unique=True)
+    display_name: Mapped[str] = mapped_column(String(100))
+    specialties: Mapped[str] = mapped_column(String(300), default="")  # comma-separated, e.g. "anxiety,study"
+
+
+class Availability(Base):
+    """A counsellor's time. kind "open" = a window students can book inside;
+    kind "blocked" = busy time with no session (e.g. a staff meeting). Half-open [start, end)."""
+
+    __tablename__ = "availability"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    counsellor_id: Mapped[int] = mapped_column(ForeignKey("counsellors.id", ondelete="CASCADE"), index=True)
+    start: Mapped[datetime] = mapped_column(UTCDateTime, index=True)
+    end: Mapped[datetime] = mapped_column(UTCDateTime)
+    kind: Mapped[str] = mapped_column(String(8))
+    note: Mapped[str] = mapped_column(String(200), default="")
+
+
+class Booking(Base):
+    """A counselling session, half-open [start, end). Carries the student's pseudonym only.
+
+    status:       active | cancelled | completed | no_show
+    revealed:     the student ticked "share my name with my counsellor for this session"
+    enc_identity: their name and email, encrypted with the server key, only when revealed
+    """
+
+    __tablename__ = "bookings"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    counsellor_id: Mapped[int] = mapped_column(ForeignKey("counsellors.id", ondelete="CASCADE"), index=True)
+    pseudonym: Mapped[str] = mapped_column(String(64), index=True)
+    start: Mapped[datetime] = mapped_column(UTCDateTime, index=True)
+    end: Mapped[datetime] = mapped_column(UTCDateTime)
+    reason: Mapped[str] = mapped_column(String(32))
+    first_visit: Mapped[bool] = mapped_column(Boolean, default=False)
+    status: Mapped[str] = mapped_column(String(16), default="active", index=True)
+    revealed: Mapped[bool] = mapped_column(Boolean, default=False)
+    enc_identity: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime)
+    cancelled_by: Mapped[str | None] = mapped_column(String(16), nullable=True)  # "student" | "counsellor"
+
+
+# --- Waitlist and offers (plan section 5; owner: Aditya) ---------------------------------
+
+class WaitlistEntry(Base):
+    """One student in one line. counsellor_id NULL = the "any counsellor" line.
+
+    tier:   0 = needs to talk within 48 hours (or aged), 1 = normal. Heap key = (tier, joined_at, id).
+    misses: offers that timed out; the second one removes the entry.
+    status: waiting | offered | booked | left | removed
+    """
+
+    __tablename__ = "waitlist_entries"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    counsellor_id: Mapped[int | None] = mapped_column(ForeignKey("counsellors.id", ondelete="CASCADE"),
+                                                      index=True, nullable=True)
+    pseudonym: Mapped[str] = mapped_column(String(64), index=True)
+    tier: Mapped[int] = mapped_column(Integer)
+    joined_at: Mapped[datetime] = mapped_column(UTCDateTime)
+    misses: Mapped[int] = mapped_column(Integer, default=0)
+    status: Mapped[str] = mapped_column(String(16), default="waiting", index=True)
+
+
+class Offer(Base):
+    """Freed time offered to one waitlisted student, held for them until expires_at.
+
+    status: open | accepted | declined | expired | withdrawn (the student left the waitlist)
+    """
+
+    __tablename__ = "offers"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    waitlist_id: Mapped[int] = mapped_column(ForeignKey("waitlist_entries.id", ondelete="CASCADE"), index=True)
+    counsellor_id: Mapped[int] = mapped_column(ForeignKey("counsellors.id", ondelete="CASCADE"))
+    start: Mapped[datetime] = mapped_column(UTCDateTime)
+    end: Mapped[datetime] = mapped_column(UTCDateTime)
+    expires_at: Mapped[datetime] = mapped_column(UTCDateTime)
+    status: Mapped[str] = mapped_column(String(16), default="open", index=True)
+    booking_id: Mapped[int | None] = mapped_column(ForeignKey("bookings.id"), nullable=True)
 
 
 # --- Events and workshops (plan section 6; owner: Divyam) ------------------------------

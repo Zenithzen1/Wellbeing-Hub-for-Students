@@ -10,15 +10,15 @@ def rebuild_all() -> None:
     ageing) with notify.schedule_job() from their own rebuild().
     """
     from app.db import SessionLocal
-    from app.services import events, notify
+    from app.services import booking, events, notify, waitlist
 
     notify.reset()
     db = SessionLocal()
     try:
         # TODO(Rithwik): identity map
-        # TODO(Aditya): interval trees
+        booking.rebuild(db)   # interval trees (sessions, blocked time, open-offer holds)
         events.rebuild(db)
-        # TODO(Aditya): waitlists (+ notify.schedule_job for open offers and the ageing check)
+        waitlist.rebuild(db)  # heaps + offer-expiry and ageing jobs
         notify.rebuild(db)
         # TODO(Rithwik): graph
     finally:
