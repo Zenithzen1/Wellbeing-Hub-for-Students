@@ -1,11 +1,50 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { api } from '../../api/index.js';
 import * as T from '../../api/time.js';
 import { useAsync } from '../../hooks/useAsync.js';
 import { Icon } from '../../components/Icon.jsx';
-import { Badge, Button, Card, Confirm, Empty, ErrorNote, Field, PageHead, Segmented, Skeleton, useToast } from '../../components/ui.jsx';
+import { Button, Card, Confirm, Empty, ErrorNote, Field, PageHead, Segmented, Skeleton, useToast } from '../../components/ui.jsx';
 
 const quarter = (v) => /^\d{2}:(00|15|30|45)$/.test(v);
+
+/** This month at a glance: a dot under days with open hours, a ring on today; a day picks the form's date. */
+function MonthGlance({ rows, today, value, onPick }) {
+  const [month, setMonth] = useState(value.slice(0, 7)); // "2026-11"
+  useEffect(() => setMonth(value.slice(0, 7)), [value]);
+  const [y, m] = month.split('-').map(Number);
+  const first = `${month}-01`;
+  const shift = (n) => { const d = new Date(Date.UTC(y, m - 1 + n, 1)); setMonth(`${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`); };
+  const days = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const lead = T.weekdayIndex(first);
+  const kinds = new Map();
+  for (const a of rows || []) { const d = T.isoDate(a.start); const k = kinds.get(d) || new Set(); k.add(a.kind); kinds.set(d, k); }
+  const cells = [...Array(lead).fill(null), ...Array.from({ length: days }, (_, i) => T.addDays(first, i))];
+  return (
+    <Card className="month" aria-label="This month">
+      <div className="month__head">
+        <button type="button" className="icon-btn" onClick={() => shift(-1)} disabled={month <= today.slice(0, 7)} aria-label="Previous month"><Icon name="left" /></button>
+        <b>{new Intl.DateTimeFormat('en-GB', { month: 'long', year: 'numeric', timeZone: T.TZ }).format(T.dubaiMidnight(first))}</b>
+        <button type="button" className="icon-btn" onClick={() => shift(1)} aria-label="Next month"><Icon name="right" /></button>
+      </div>
+      <div className="month__dow" aria-hidden="true">{['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map((d) => <span key={d}>{d}</span>)}</div>
+      <div className="month__days">
+        {cells.map((d, i) => {
+          if (!d) return <span key={`x${i}`} />;
+          const k = kinds.get(d);
+          const past = d < today;
+          return (
+            <button key={d} type="button" disabled={past} onClick={() => onPick(d)} aria-pressed={value === d}
+              className={`mday${d === today ? ' is-today' : ''}${value === d ? ' is-on' : ''}`} aria-label={`${T.longDay(T.dubaiMidnight(d))}${k?.has('open') ? ', open hours' : ''}${k?.has('blocked') ? ', blocked time' : ''}`}>
+              {Number(d.slice(8))}
+              <span className="mday__dots">{k?.has('open') ? <i className="dot dot--open" /> : null}{k?.has('blocked') ? <i className="dot dot--blocked" /> : null}</span>
+            </button>
+          );
+        })}
+      </div>
+      <p className="month__key"><i className="dot dot--open" />Open hours <i className="dot dot--blocked" />Blocked time</p>
+    </Card>
+  );
+}
 
 export default function Hours() {
   const toast = useToast();
@@ -62,7 +101,6 @@ export default function Hours() {
                     <span className={`kind kind--${a.kind}`}><Icon name={a.kind === 'open' ? 'hours' : 'block'} /></span>
                     <div className="row__main"><b>{T.span(a.start, a.end)}</b><span>{a.kind === 'open' ? 'Open for bookings' : `Blocked${a.note ? `: ${a.note}` : ''}`}</span></div>
                     <div className="row__side">
-                      <Badge tone={a.kind === 'open' ? 'ok' : 'plain'}>{a.kind === 'open' ? 'Open' : 'Blocked'}</Badge>
                       <Confirm confirmLabel="Remove" onConfirm={() => remove(a)}>{(ask) => <button type="button" className="icon-btn" aria-label="Remove" onClick={ask}><Icon name="trash" /></button>}</Confirm>
                     </div>
                   </li>
@@ -72,7 +110,9 @@ export default function Hours() {
           ))}
         </section>
 
-        <Card as="form" className="join-card sticky" onSubmit={add} noValidate aria-labelledby="add-h">
+        <div className="side-col sticky">
+        <MonthGlance rows={list.data} today={today} value={form.date} onPick={(d) => setForm((f) => ({ ...f, date: d }))} />
+        <Card as="form" className="join-card" onSubmit={add} noValidate aria-labelledby="add-h">
           <h2 id="add-h" className="h-sub">Add hours</h2>
           <Segmented label="Kind" value={form.kind} onChange={set('kind')} options={[['open', 'Open'], ['blocked', 'Blocked']]} />
           <Field label="Day" id="h-date" error={errors.date}><input id="h-date" type="date" min={today} value={form.date} onChange={set('date')} /></Field>
@@ -85,6 +125,7 @@ export default function Hours() {
           <Button type="submit" busy={busy}>{form.kind === 'open' ? 'Publish open hours' : 'Block this time'}</Button>
           <p className="muted small">Times are Dubai time. A window is 24 hours at most.</p>
         </Card>
+        </div>
       </div>
     </>
   );

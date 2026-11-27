@@ -51,8 +51,9 @@ export default function Today() {
       ) : (
         <ul className="rows-list sessions">
           {xs.map((s) => {
-            const [label, tone] = STATUS[s.status] || [s.status, 'plain'];
             const started = new Date(s.start) <= now;
+            const live = s.status === 'active' && started && new Date(s.end) > now;
+            const [label, tone] = live ? ['In session', 'accent'] : STATUS[s.status] || [s.status, 'plain'];
             return (
               <li key={s.id} className={`row${s.status === 'cancelled' ? ' is-muted' : ''}`}>
                 <span className="row__time"><b>{T.time(s.start)}</b><span>{T.time(s.end)}</span></span>

@@ -4,9 +4,8 @@ import { api } from '../../api/index.js';
 import * as T from '../../api/time.js';
 import { useAsync } from '../../hooks/useAsync.js';
 import { Icon } from '../../components/Icon.jsx';
-import { Button, Card, ChipGroup, ErrorNote, PageHead, REASONS, Skeleton, Toggle, reasonLabel, useToast } from '../../components/ui.jsx';
+import { Button, Card, ChipGroup, ErrorNote, PageHead, REASONS, Skeleton, Toggle, initials, reasonLabel, useToast } from '../../components/ui.jsx';
 
-const initials = (name) => name.replace(/^Dr\.? /, '').split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
 const ANY = 'any';
 
 /** The 7 free days of every counsellor from `from`, as { [id]: FreeDay[] }. */
@@ -155,7 +154,7 @@ export default function Book() {
                   <b>{week === 0 ? 'Next 7 days' : `${T.day(T.dubaiMidnight(from))} to ${T.day(T.dubaiMidnight(T.addDays(from, 6)))}`}</b>
                   <button type="button" className="icon-btn" onClick={() => setWeek((w) => w + 1)} disabled={week >= 7} aria-label="Next week"><Icon name="right" /></button>
                 </div>
-                <Toggle label="First visit" hint={`${minutes} minutes`} checked={firstVisit} onChange={setFirstVisit} />
+                <Toggle label="First visit" hint="60 minutes instead of 45" checked={firstVisit} onChange={setFirstVisit} />
               </div>
 
               <div className="days" role="tablist" aria-label="Day">
@@ -206,7 +205,7 @@ export default function Book() {
               <div id="reason-first">
                 <ChipGroup label="Reason" options={REASONS} value={reason} onChange={(r) => { setReason(r); setErr(null); }} />
               </div>
-              <Toggle label={`Share my name with ${byName[pick.counsellor_id]?.display_name}`} hint={reveal ? 'They see your name for this session only' : `Off: they see ${'your tag'} and the reason`} checked={reveal} onChange={setReveal} />
+              <Toggle label={`Share my name with ${byName[pick.counsellor_id]?.display_name}`} hint={reveal ? `${byName[pick.counsellor_id]?.display_name} sees your name for this session only` : `Off: ${byName[pick.counsellor_id]?.display_name} sees your tag and the reason`} checked={reveal} onChange={setReveal} />
               {err ? <p className="field__error" role="alert">{err}</p> : null}
               <div className="confirm-card__acts">
                 <Button onClick={book} busy={busy} icon="check">Book {T.time(pick.start)}</Button>

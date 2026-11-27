@@ -66,6 +66,7 @@
   .bk__who i { grid-row: span 2; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font: 500 12px/1 var(--font-text); font-style: normal; background: #e6e2d9; color: #1d2530; }
   .bk__who b { font-weight: 500; font-size: 14px; } .bk__who span { font-size: 13px; color: #5a6270; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .bk__who.is-on { background: rgb(29 37 48 / .05); }
+  .bk__who i.is-any { background: #cdd6c6; color: #262d24; }
   .bk__main { display: grid; align-content: start; gap: 14px; padding: 16px 20px; }
   .bk__head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .bk__head b { font-size: 16px; font-weight: 500; margin-right: 4px; }
@@ -73,6 +74,8 @@
   .bk__days { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
   .bk__day { display: grid; justify-items: center; padding: 6px 0; border-radius: 8px; border: 1px solid rgb(29 37 48 / .1); font-size: 13px; color: #5a6270; }
   .bk__day b { font-size: 15px; font-weight: 500; color: #1d2530; }
+  .bk__day em { font-style: normal; font-size: 12px; font-weight: 500; color: #2f7a4f; }
+  .bk__day.is-full b, .bk__day.is-full em { color: #5a6270; font-weight: 400; }
   .bk__day.is-on { border-color: #1d2530; box-shadow: inset 0 0 0 1px #1d2530; }
   .bk__times { display: flex; flex-wrap: wrap; gap: 6px; }
   .bk__t { font: 500 13px/1 var(--font-mono); padding: 8px 10px; border-radius: 8px; background: rgb(29 37 48 / .05); color: #1d2530; }
@@ -81,9 +84,7 @@
   .bk__sum span { font-size: 13px; color: #5a6270; } .bk__sum b { display: block; font-weight: 500; font-size: 14px; color: #1d2530; }
   .bk__btn { margin-left: auto; padding: 8px 16px; border-radius: 99px; background: var(--p-action); color: #fff; font-weight: 500; font-size: 13px; white-space: nowrap; }
   .bk__dayline { display: none; font-weight: 500; }
-  .bk__done { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #3b4350; }
-  .bk__done svg { width: 16px; height: 16px; flex: none; color: #2f7a4f; }
-  @media (max-width: 1023px) {
+  @media (max-width: 1279px) {
     .bk__body { grid-template-columns: minmax(0, 1fr); }
     .bk__side { display: none; }
     .bk__days { display: none; } .bk__dayline { display: block; }
@@ -119,7 +120,21 @@
   }
 
   #features .panel { --p-h: 336px; }
-  @media (max-width: 639px) { #features .panel { --p-h: 150px; } #features .stage { --fade-h: 40px; } }
+  .ms { width: 100%; background: #fff; color: #1d2530; border-radius: 12px; font: 400 14px/1.4 var(--font-text); box-shadow: 0 0 0 1px rgb(29 37 48 / .08), 0 24px 60px -28px rgb(29 37 48 / .3); padding: 16px; display: grid; gap: 10px; }
+  .ms__head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+  .ms__head > b { font-weight: 500; font-size: 16px; }
+  .ms__tabs { display: flex; gap: 12px; font-size: 13px; color: #5a6270; } .ms__tabs i { font-style: normal; padding-bottom: 2px; }
+  .ms__tabs i.is-on { color: #1d2530; font-weight: 500; box-shadow: inset 0 -2px 0 #1d2530; }
+  .ms__next, .ms__row { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 12px; }
+  .ms__next { background: #dce3d6; } .ms__row { box-shadow: 0 0 0 1px rgb(29 37 48 / .1); }
+  .ms__next p, .ms__row p { margin: 0; display: grid; flex: 1; min-width: 0; }
+  .ms__next p > span, .ms__row p > span { font-size: 13px; color: #5a6270; } .ms__next b, .ms__row b { font-weight: 500; } .ms__row b span { color: #5a6270; font-weight: 400; }
+  .ms__date { flex: none; width: 40px; height: 44px; border-radius: 10px; background: #f3f1ec; box-shadow: inset 0 0 0 1px rgb(29 37 48 / .1); display: grid; place-content: center; text-align: center; line-height: 1.05; }
+  .ms__next .ms__date { background: #fff; box-shadow: none; }
+  .ms__date b { font-size: 16px; font-weight: 500; } .ms__date i { font-style: normal; font-size: 11px; color: #5a6270; }
+  .ms__row em { font-style: normal; font-size: 12px; font-weight: 500; color: #2c5877; }
+  @media (max-width: 639px) { #features .panel { --p-h: 160px; } #features .stage { --fade-h: 40px; } .ms { padding: 12px; gap: 8px; } .ms__tabs { display: none; } .ms__row { padding: 8px; } }
+  @media (max-width: 1023px) { .ms__next, .ms > .ms__row ~ .ms__row { display: none; } }
 
   /* the privacy split: the booking sheet with what the counsellor sees under it */
   .sh { width: 100%; background: #fff; color: #1d2530; border-radius: 12px; font: 400 14px/1.45 var(--font-text);
@@ -130,7 +145,8 @@
   .sh__pick > span { font-size: 13px; color: #5a6270; }
   .sh__chips { display: flex; flex-wrap: wrap; gap: 6px; }
   .sh__chips i { font-style: normal; font-size: 13px; padding: 6px 10px; border-radius: 99px; border: 1px solid rgb(29 37 48 / .12); }
-  .sh__chips i.is-on { background: #e0dfdb; border-color: transparent; }
+  .sh__chips i.is-on { background: #e0dfdb; border-color: transparent; font-weight: 500; }
+  .sh__chips i.is-on::before { content: "\2713\00a0"; }
   .sh__share { display: flex; align-items: center; gap: 12px; padding: 14px 20px; }
   .sh__switch { width: 34px; height: 20px; border-radius: 99px; background: rgb(29 37 48 / .18); position: relative; flex: none; }
   .sh__switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgb(0 0 0 / .2); }
@@ -144,7 +160,7 @@
   .sh__foot { display: flex; align-items: center; gap: 14px; padding: 16px 20px 24px; }
   .sh__btn { padding: 10px 18px; border-radius: 99px; background: var(--p-action); color: #fff; font-weight: 500; font-size: 14px; }
   .sh__note { font-size: 13px; color: #5a6270; }
-  @media (max-width: 639px) { .sh { width: 100%; } }
+  @media (max-width: 639px) { .sh__head { flex-direction: column; gap: 2px; } }
 
   .sh-frame { --ratio: 0px; padding: 48px; align-items: flex-start; }
   @media (max-width: 1279px) { .sh__chips i:not(.is-on) { display: none; } }
@@ -156,10 +172,11 @@
   @media (max-width: 639px) { #faq { --hm: 2; } }
   @media (min-width: 640px) and (max-width: 1023px) { #workshops .frame--split { min-height: 500px; } #workshops ul { display: none; } }
   @media (min-width: 1024px) and (max-width: 1279px) { #features .panel { --p-h: 290px; } }
-  @media (min-width: 640px) and (max-width: 1023px) { #features .grid > .card { grid-column: 1 / -1; } #features .panel { --p-h: 200px; } }
+  @media (min-width: 640px) and (max-width: 1023px) { #features .grid > .card { grid-column: 1 / -1; } #features .panel { --p-h: 200px; } #features .at-right { --ay: 40px; } }
 
   /* the close's name across the .wrap: "Well-Being Hub" is 14 letters, about 6.3em wide in Outfit */
-  .close__word { font-size: min(196px, calc((100vw - 2 * var(--gut)) / 6.5)); line-height: 1.08; }
+  .close__word { font-size: min(196px, calc((100vw - 2 * var(--gut)) / 6.5)); line-height: 1.18; overflow: visible; }
+  .footer--statement .mark { background: var(--p-accent); }
   .hero--centred .hero__lead { color: var(--ink); }
   @media (max-width: 639px) { .hero--centred .pill { width: 100%; justify-content: center; } .closing__links .footer__lede { display: none; } }
   /* 320 wide: the name, the main button and the menu button on one line */
@@ -194,7 +211,7 @@
             <div class="menu-col span-3">
               <p class="t-label">Counsellors</p>
               <a href="#app">Open hours<span>Publish or block time</span></a>
-              <a href="#app">Sessions<span>Mark done or missed</span></a>
+              <a href="#app">Sessions<span>Mark completed or no-show</span></a>
               <a href="#privacy">Tags<span>A reason, never a name</span></a>
             </div>
             <a class="menu-card span-3 start-10" href="#waitlist">
@@ -238,20 +255,19 @@
         <div class="btn-row"><a class="btn btn--primary" href="/app/#/book">Book a session<svg class="m-arrow" viewBox="0 0 12 12" aria-hidden="true"><path class="m-arrow__stem" d="M1 6h8"/><path class="m-arrow__head" d="M4.5 2.5 8 6l-3.5 3.5"/></svg></a><a class="btn btn--secondary" href="#workshops">See workshops</a></div>
       </div>
       <div class="hero__window" data-fx="grain-gradient" data-fx-seed="7" role="img" aria-label="The booking screen: Dr Noor’s free start times on Tuesday 1 December, 10:15 picked and booked">
-        <div class="ly-piece bk" aria-hidden="true">
-          <div class="bk__bar"><span class="bk__dots"><i></i><i></i><i></i></span><span><b>Book a session</b> · Week of 30 Nov</span><span class="bk__sp"></span><span class="bk__tz">Dubai time</span></div>
+        <div class="ly-piece bk ui" aria-hidden="true">
+          <div class="bk__bar"><span class="bk__dots"><i></i><i></i><i></i></span><span><b>Book a session</b> · Next 7 days</span><span class="bk__sp"></span><span class="bk__tz">Dubai time</span></div>
           <div class="bk__body">
             <div class="bk__side">
               <div class="bk__who is-on"><i>DN</i><b>Dr Noor</b><span>Anxiety, study</span></div>
               <div class="bk__who"><i>DM</i><b>Dr Mehta</b><span>Sleep, low mood</span></div>
-              <div class="bk__who"><i>+</i><b>Any counsellor</b><span>First free time</span></div>
+              <div class="bk__who"><i class="is-any"><svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.3"/><path d="M2 13c.5-2 2-3 4-3s3.5 1 4 3"/><path d="M10.5 3.9a2.2 2.2 0 0 1 0 4.2M12 10.2c1 .5 1.7 1.4 2 2.8"/></svg></i><b>Any counsellor</b><span>First free time</span></div>
             </div>
             <div class="bk__main" data-ly-steps="900">
               <div class="bk__dayline">Dr Noor · Tuesday 1 December</div>
-              <div class="bk__days"><span class="bk__day">Mon<b>30</b></span><span class="bk__day is-on">Tue<b>1</b></span><span class="bk__day">Wed<b>2</b></span><span class="bk__day">Thu<b>3</b></span><span class="bk__day">Fri<b>4</b></span></div>
+              <div class="bk__days"><span class="bk__day">Mon<b>30</b><em>7 free</em></span><span class="bk__day is-on">Tue<b>1</b><em>8 free</em></span><span class="bk__day is-full">Wed<b>2</b><em>Full</em></span><span class="bk__day">Thu<b>3</b><em>5 free</em></span><span class="bk__day">Fri<b>4</b><em>6 free</em></span></div>
               <div class="bk__times"><span class="bk__t">09:00</span><span class="bk__t">09:15</span><span class="bk__t is-on">10:15</span><span class="bk__t">11:30</span><span class="bk__t">13:00</span><span class="bk__t">13:15</span><span class="bk__t">14:45</span><span class="bk__t">15:00</span></div>
               <div class="bk__sum" data-step><span><b>Tue 1 Dec, 10:15 to 11:00</b>Dr Noor · academic stress</span><span class="bk__btn">Book 10:15</span></div>
-              <div class="bk__done" data-step><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3.5 8.4 2.8 2.8 6.2-6.4"/></svg>Booked. Reminders 24 hours and 1 hour before.</div>
             </div>
           </div>
         </div>
@@ -264,7 +280,7 @@
       <div class="grid">
         <h2 id="app-h" class="span-5">A counsellor’s day in one window</h2>
         <div class="span-6 start-7 stack-4">
-          <p class="t-lead">Counsellors publish open hours, block time and mark each session done or missed. Students show as a tag and a reason, with a name only when they share it.</p>
+          <p class="t-lead">Counsellors publish open hours, block time and mark each session completed or a no-show. Students show as a tag and a reason, with a name only when they share it.</p>
           <p><a class="link" href="/app/#/signin">Sign in as a counsellor</a></p>
         </div>
       </div>
@@ -273,19 +289,19 @@
           <div class="ui ui-panel ui-win" data-ui="window" data-open="Booked" data-work="In session" data-done="Completed">
             <div class="ui-win__bar">
               <span class="ui-dots" aria-hidden="true"><i></i><i></i><i></i></span>
-              <span class="ui-win__crumb"><svg class="ui-brand" aria-hidden="true" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="2.5" width="20" height="5.5" rx="2.75"/><rect x="2" y="9.25" width="14" height="5.5" rx="2.75"/><rect x="2" y="16" width="8" height="5.5" rx="2.75"/></svg>Dr Noor <i>/</i> <b>Today</b></span>
+              <span class="ui-win__crumb"><svg class="ui-brand" aria-hidden="true" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="2.5" width="20" height="5.5" rx="2.75"/><rect x="2" y="9.25" width="14" height="5.5" rx="2.75"/><rect x="2" y="16" width="8" height="5.5" rx="2.75"/></svg>Sessions <i>/</i> <b>Today</b></span>
               <span class="ui-spacer"></span>
               <span class="ui-win__search" aria-hidden="true"><svg class="ui-icon" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3"/></svg><span class="ui-win__ph">Search</span><span class="ui-kbd">/</span></span>
             </div>
             <div class="ui-win__body">
               <nav class="ui-win__side" aria-hidden="true">
-                <span class="ui-win__nav is-on"><svg class="ui-icon" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.5"/><path d="M8 5v3l2 1.5"/></svg>Today<em>9</em></span>
-                <span class="ui-win__nav"><svg class="ui-icon" viewBox="0 0 16 16"><path d="M2.5 4h11v9.5h-11z"/><path d="M2.5 7h11M5.5 2.5v3M10.5 2.5v3"/></svg>Week<em>31</em></span>
-                <span class="ui-win__nav"><svg class="ui-icon" viewBox="0 0 16 16"><path d="m3.5 8.4 2.8 2.8 6.2-6.4"/></svg>Hours</span>
-                <span class="ui-win__nav"><svg class="ui-icon" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.5"/><path d="M4.2 11.8 11.8 4.2"/></svg>Blocked</span>
+                <span class="ui-win__nav is-on"><svg class="ui-icon" viewBox="0 0 16 16"><path d="M5.5 4h8M5.5 8h8M5.5 12h8"/><circle cx="2.6" cy="4" r=".6"/><circle cx="2.6" cy="8" r=".6"/><circle cx="2.6" cy="12" r=".6"/></svg>Sessions<em>9</em></span>
+                <span class="ui-win__nav"><svg class="ui-icon" viewBox="0 0 16 16"><path d="M2.5 4h11v9.5h-11z"/><path d="M2.5 7h11M5.5 2.5v3M10.5 2.5v3"/></svg>Open hours</span>
+                <span class="ui-win__nav"><svg class="ui-icon" viewBox="0 0 16 16"><circle cx="8" cy="4.5" r="2"/><path d="M3 13.5c.6-2.6 2.6-4 5-4s4.4 1.4 5 4"/></svg>Workshops</span>
+                <span class="ui-win__nav"><svg class="ui-icon" viewBox="0 0 16 16"><path d="M2.5 9h3l1 1.5h3l1-1.5h3"/><path d="M2.5 9 4 3.5h8L13.5 9v3.5h-11z"/></svg>Inbox<em>1</em></span>
                 <span class="ui-win__label">Waitlist</span>
-                <span class="ui-win__nav"><span class="ui-win__hash">#</span>Mine<em>4</em></span>
-                <span class="ui-win__nav"><span class="ui-win__hash">#</span>Any<em>7</em></span>
+                <span class="ui-win__nav"><span class="ui-win__hash">#</span>For you<em>4</em></span>
+                <span class="ui-win__nav"><span class="ui-win__hash">#</span>For anyone<em>6</em></span>
               </nav>
               <div class="ui-win__main">
                 <div class="ui-win__cols" aria-hidden="true"><span>Student</span><span>Reason</span><span>Status</span><span>Length</span></div>
@@ -324,7 +340,7 @@
             <div class="ui-cal__events">
               <div class="ui-cal__ev" data-ev="14">
                 <span class="ui-cal__date"><b>14</b><i>Dec</i></span>
-                <span class="ui-cal__evtext"><span class="ui-cal__evtitle">Open hours, 9:00 to 13:00</span><span class="ui-cal__evsub">12 start times published</span></span>
+                <span class="ui-cal__evtext"><span class="ui-cal__evtitle">Open hours, 09:00 to 13:00</span><span class="ui-cal__evsub">12 start times published</span></span>
               </div>
               <div class="ui-cal__ev" data-ev="16">
                 <span class="ui-cal__date"><b>16</b><i>Dec</i></span>
@@ -352,13 +368,13 @@
             <h3>Sets the length for a first visit</h3>
             <p>Tick first visit and the grid shows 60-minute starts. Your name stays off the booking unless you switch it on.</p>
             <div class="panel" data-fx="gradient-mesh" data-fx-seed="21" data-fx-palette='{"bg":"#cdd6c6","surface":"#e4e9df","ink":"#93a68a","accent":"#6c8e63"}' data-fx-params='{"drift":0}'>
-              <div class="stage stage--fade-b"><div class="at-right" style="--ax:32px;--ay:96px;--ay-sm:24px" data-ui-loop>
+              <div class="stage stage--fade-b"><div class="at-right" style="--ax:32px;--ay:140px;--ay-sm:24px" data-ui-loop>
                 <div class="ui ui-panel ui-toggles" data-ui="toggles">
                   <div class="ui-head">
                     <svg class="ui-icon ui-toggles__ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 4h11v9.5h-11z"/><path d="M2.5 7h11M5.5 2.5v3M10.5 2.5v3"/></svg>
                     <div class="ui-title">Tue 1 Dec, 10:15</div>
                     <span class="ui-spacer"></span>
-                    <div class="ui-meta" data-tg-count>1 of 4 on</div>
+                    <div class="ui-meta" data-tg-count>1 of 3 on</div>
                   </div>
                   <ul class="ui-toggles__list">
                     <li class="ui-tg">
@@ -366,16 +382,12 @@
                       <button class="ui-switch is-on" type="button" role="switch" aria-checked="true" aria-label="First visit"><i></i></button>
                     </li>
                     <li class="ui-tg">
-                      <span class="ui-tg__text"><span class="ui-tg__label">Share my name with Dr Noor</span><span class="ui-tg__sub">For this session only</span></span>
+                      <span class="ui-tg__text"><span class="ui-tg__label">Share my name with Dr Noor</span><span class="ui-tg__sub">Off: Dr Noor sees your tag and the reason</span></span>
                       <button class="ui-switch" type="button" role="switch" aria-checked="false" aria-label="Share my name with Dr Noor"><i></i></button>
                     </li>
                     <li class="ui-tg">
-                      <span class="ui-tg__text"><span class="ui-tg__label">Urgent, if I join a waitlist</span><span class="ui-tg__sub">Someone within 48 hours</span></span>
-                      <button class="ui-switch" type="button" role="switch" aria-checked="false" aria-label="Urgent, if I join a waitlist"><i></i></button>
-                    </li>
-                    <li class="ui-tg">
-                      <span class="ui-tg__text"><span class="ui-tg__label">Wait for any counsellor too</span><span class="ui-tg__sub">The first free time with anyone</span></span>
-                      <button class="ui-switch" type="button" role="switch" aria-checked="false" aria-label="Wait for any counsellor too"><i></i></button>
+                      <span class="ui-tg__text"><span class="ui-tg__label">I need to talk to someone within 48 hours</span><span class="ui-tg__sub">When you join a waitlist</span></span>
+                      <button class="ui-switch" type="button" role="switch" aria-checked="false" aria-label="I need to talk to someone within 48 hours"><i></i></button>
                     </li>
                   </ul>
                 </div>
@@ -386,7 +398,7 @@
             <h3>Reminds you a day and an hour before</h3>
             <p>Reminders land 24 hours and 1 hour before each session, in your inbox and in every open tab.</p>
             <div class="panel" data-fx="gradient-mesh" data-fx-seed="34" data-fx-palette='{"bg":"#cdd6c6","surface":"#e4e9df","ink":"#93a68a","accent":"#6c8e63"}' data-fx-params='{"drift":0}'>
-              <div class="stage stage--fade-b"><div class="at-rise fit" style="--fit-max:380px;--ax:32px;--ay:calc(100% - 180px);--ay-sm:calc(100% - 180px)">
+              <div class="stage stage--fade-b"><div class="at-rise fit" style="--fit-max:380px;--ax:32px;--ay:calc(100% - 180px);--ay-sm:16px">
                 <div class="ui ui-notify" data-ui="notify">
                   <ul class="ui-notify__list" data-notify-list>
                     <li class="ui-note"><span class="ui-agent ui-note__av" aria-hidden="true"></span><span class="ui-note__text"><span class="ui-note__title">Session in 1 hour<time>now</time></span><span class="ui-note__body">Dr Noor, Tuesday at 10:15</span></span><span class="ui-btn ui-btn--sm ui-note__btn">Open</span></li>
@@ -409,25 +421,14 @@
         </article>
         <article class="card card--row card--open span-6 m-nolift">
           <h3>Lists every session you have booked</h3>
-          <p>Upcoming, completed and cancelled sessions sit in one list, each with its counsellor, reason and time.</p>
+          <p>Upcoming sessions on one tab, past and cancelled ones on the other, each with its counsellor, reason and time.</p>
           <div class="panel" data-fx="gradient-mesh" data-fx-seed="58" data-fx-palette='{"bg":"#cdd6c6","surface":"#e4e9df","ink":"#93a68a","accent":"#6c8e63"}' data-fx-params='{"drift":0}'>
-            <div class="stage stage--fade-br"><div class="at-corner" style="--ax:32px;--ay:40px" data-ui-still>
-              <div class="ui ui-panel ui-win" data-ui="window" data-ui-opts='{"compact":true}' data-open="Upcoming" data-work="Today" data-done="Completed">
-                <div class="ui-win__bar">
-                  <span class="ui-dots" aria-hidden="true"><i></i><i></i><i></i></span>
-                  <span class="ui-win__crumb"><svg class="ui-brand" aria-hidden="true" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="2.5" width="20" height="5.5" rx="2.75"/><rect x="2" y="9.25" width="14" height="5.5" rx="2.75"/><rect x="2" y="16" width="8" height="5.5" rx="2.75"/></svg>My sessions</span>
-                  <span class="ui-spacer"></span>
-                </div>
-                <div class="ui-win__body">
-                  <div class="ui-win__main">
-                    <ul class="ui-win__rows">
-                      <li class="ui-win__row" data-row><span class="ui-avatar" data-tone="4">DN</span><span class="ui-win__who">Dr Noor</span><span class="ui-win__sub">Tue 1 Dec, 10:15 · Academic stress</span><span class="ui-win__st" data-st>Upcoming</span><span class="ui-win__age">45m</span></li>
-                      <li class="ui-win__row" data-row><span class="ui-avatar" data-tone="2">DM</span><span class="ui-win__who">Dr Mehta</span><span class="ui-win__sub">Thu 3 Dec, 14:00 · Sleep</span><span class="ui-win__st" data-st>Upcoming</span><span class="ui-win__age">45m</span></li>
-                      <li class="ui-win__row" data-row><span class="ui-avatar" data-tone="4">DN</span><span class="ui-win__who">Dr Noor</span><span class="ui-win__sub">Tue 17 Nov, 11:00 · Anxiety</span><span class="ui-win__st is-done" data-st>Completed</span><span class="ui-win__age">60m</span></li>
-                      <li class="ui-win__row" data-row><span class="ui-avatar" data-tone="2">DM</span><span class="ui-win__who">Dr Mehta</span><span class="ui-win__sub">Mon 9 Nov, 15:30 · Sleep</span><span class="ui-win__st is-done" data-st>Cancelled</span><span class="ui-win__age">45m</span></li>
-                    </ul>
-                  </div>
-                </div>
+            <div class="stage stage--fade-b"><div class="at-rise fit" style="--fit-max:480px;--ax:max(32px, 50% - 240px);--ay:40px;--ay-sm:16px">
+              <div class="ms ui" aria-hidden="true">
+                <div class="ms__head"><b>My sessions</b><span class="ms__tabs"><i class="is-on">Upcoming 2</i><i>Past and cancelled 2</i></span></div>
+                <div class="ms__next"><span class="ms__date"><b>1</b><i>Dec</i></span><p><span>Next session · in 4 days</span><b>Tuesday 1 December, 10:15 to 11:00</b><span>Dr Noor · Academic stress · tag only</span></p></div>
+                <div class="ms__row"><span class="ms__date"><b>1</b><i>Dec</i></span><p><b>10:15 to 11:00 <span>· Tue</span></b><span>Dr Noor · Academic stress</span></p><em>Upcoming</em></div>
+                <div class="ms__row"><span class="ms__date"><b>3</b><i>Dec</i></span><p><b>14:00 to 14:45 <span>· Thu</span></b><span>Dr Mehta · Sleep</span></p><em>Upcoming</em></div>
               </div>
             </div></div>
           </div>
@@ -457,13 +458,13 @@
           <p><a class="link" href="#faq">Read the privacy questions</a></p>
         </div>
         <div class="frame frame--split frame--lit sh-frame span-6 start-7" role="img" aria-label="A booking for Tuesday 1 December with the share-my-name switch off, and below it what Dr Noor sees: the tag #47C32E and the reason">
-            <div class="sh" aria-hidden="true">
+            <div class="sh ui" aria-hidden="true">
               <div class="sh__head"><b>Book with Dr Noor</b><span>Tue 1 Dec, 10:15 to 11:00</span></div>
               <div class="sh__pick">
                 <span>Reason</span>
                 <div class="sh__chips"><i class="is-on">Academic stress</i><i>Anxiety</i><i>Low mood</i><i>Relationships</i><i>Sleep</i><i>Other</i></div>
               </div>
-              <div class="sh__share"><span class="sh__switch"></span><p>Share my name for this session<small>Off: Dr Noor sees your tag only</small></p></div>
+              <div class="sh__share"><span class="sh__switch"></span><p>Share my name with Dr Noor<small>Off: Dr Noor sees your tag and the reason</small></p></div>
               <div class="sh__seen">
                 <span>What Dr Noor sees</span>
                 <div class="sh__tag"><i>47</i><p><b>#47C32E</b><span>Academic stress · 10:15 to 11:00</span></p></div>
@@ -562,10 +563,10 @@
           <a class="nav__logo" href="#top"><span class="mark" data-mark="stack" aria-hidden="true"></span>Well-Being Hub</a>
           <p class="footer__lede">Counselling and workshops for students.</p>
         </div>
-        <div class="span-2 footer__col"><h3>App</h3><ul><li><a href="#app">Counsellors</a></li><li><a href="#features">Students</a></li></ul></div>
+        <div class="span-2 footer__col"><h3>App</h3><ul><li><a href="#features">Students</a></li><li><a href="#app">Counsellors</a></li></ul></div>
         <div class="span-2 footer__col"><h3>Waitlist</h3><ul><li><a href="#waitlist">How it works</a></li><li><a href="#faq">Questions</a></li></ul></div>
-        <div class="span-2 footer__col"><h3>Privacy</h3><ul><li><a href="#privacy">Tags and names</a></li><li><a href="#workshops">Workshops</a></li></ul></div>
-        <div class="span-2 footer__col"><h3>Account</h3><ul><li><a href="/app/#/signin">Sign in</a></li><li><a href="mailto:counselling@wellbeinghub.example">Contact</a></li></ul></div>
+        <div class="span-2 footer__col"><h3>Privacy</h3><ul><li><a href="#privacy">Tags and names</a></li><li><a href="mailto:counselling@wellbeinghub.example">Contact</a></li></ul></div>
+        <div class="span-2 footer__col"><h3>Workshops</h3><ul><li><a href="#workshops">This month</a></li></ul></div>
       </div>
       <div class="footer__legal">
         <span>&copy; 2026 Well-Being Hub</span>

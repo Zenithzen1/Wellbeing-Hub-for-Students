@@ -5,6 +5,8 @@ export const REASONS = [
   ['academic_stress', 'Academic stress'], ['anxiety', 'Anxiety'], ['low_mood', 'Low mood'],
   ['relationships', 'Relationships'], ['sleep', 'Sleep'], ['other', 'Other'],
 ];
+/** "Dr Noor" -> "DN", "Wellbeing team" -> "WT": the same two letters on every screen (and the landing page). */
+export const initials = (name = '') => name.split(/\s+/).filter(Boolean).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
 export const reasonLabel = (r) => (REASONS.find(([k]) => k === r)?.[1] || r?.replace(/_/g, ' ') || '');
 
 export function Button({ variant = 'primary', size, icon, busy, children, className = '', ...rest }) {

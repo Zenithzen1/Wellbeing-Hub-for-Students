@@ -4,7 +4,7 @@ import { api } from '../../api/index.js';
 import * as T from '../../api/time.js';
 import { useAsync, useNow } from '../../hooks/useAsync.js';
 import { Icon } from '../../components/Icon.jsx';
-import { Badge, Button, Card, ChipGroup, Confirm, Empty, ErrorNote, PageHead, REASONS, Skeleton, Toggle, useToast } from '../../components/ui.jsx';
+import { Badge, Button, Card, ChipGroup, Confirm, Empty, ErrorNote, PageHead, REASONS, Skeleton, Toggle, initials, useToast } from '../../components/ui.jsx';
 
 function Countdown({ until, now }) {
   const left = Math.max(0, new Date(until) - now);
@@ -41,7 +41,7 @@ function Offer({ entry, onDone }) {
         <div><h2>{T.longDay(o.start)}, {T.span(o.start, o.end)}</h2><p>{o.counsellor_name} · 45 minutes</p></div>
       </div>
       <ChipGroup label="Reason" options={REASONS} value={reason} onChange={setReason} />
-      <Toggle label={`Share my name with ${o.counsellor_name}`} hint="For this session only" checked={reveal} onChange={setReveal} />
+      <Toggle label={`Share my name with ${o.counsellor_name}`} hint={reveal ? `${o.counsellor_name} sees your name for this session only` : `Off: ${o.counsellor_name} sees your tag and the reason`} checked={reveal} onChange={setReveal} />
       {err ? <p className="field__error" role="alert">{err}</p> : null}
       <p className="muted small">Accepting books this time and takes you out of every other line.</p>
       <div className="confirm-card__acts">
@@ -92,7 +92,7 @@ export default function Waitlist() {
             <ul className="rows-list">
               {waiting.map((e) => (
                 <li key={e.id} className="row">
-                  <span className={`avatar${e.counsellor_id ? '' : ' avatar--any'}`}>{e.counsellor_id ? e.counsellor_name.replace(/^Dr /, '').slice(0, 2).toUpperCase() : <Icon name="users" />}</span>
+                  <span className={`avatar${e.counsellor_id ? '' : ' avatar--any'}`}>{e.counsellor_id ? initials(e.counsellor_name) : <Icon name="users" />}</span>
                   <div className="row__main">
                     <b>{e.counsellor_id ? `${e.counsellor_name}’s line` : 'Any counsellor'}</b>
                     <span>{e.ahead === 0 ? 'You are next' : `${e.ahead} ${e.ahead === 1 ? 'student' : 'students'} ahead of you`} · joined {T.relative(e.joined_at)}{e.misses ? ` · ${e.misses} offer missed` : ''}</span>

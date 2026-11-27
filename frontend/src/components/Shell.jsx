@@ -3,7 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { api, demo } from '../api/index.js';
 import { useSession } from '../session.jsx';
 import { Icon, Mark } from './Icon.jsx';
-import { useToast } from './ui.jsx';
+import { initials, useToast } from './ui.jsx';
 
 const NAV = {
   S: [['/book', 'Book', 'calendar'], ['/sessions', 'My sessions', 'list'], ['/waitlist', 'Waitlist', 'clock'], ['/workshops', 'Workshops', 'workshop'], ['/inbox', 'Inbox', 'inbox']],
@@ -58,12 +58,12 @@ export function Shell({ children }) {
         </nav>
         <div className="side__foot">
           {mode === 'demo' ? (
-            <div className="side__demo"><Icon name="spark" /><span>Demo data, nothing is sent</span>
+            <div className="side__demo"><Icon name="spark" /><span>Demo data</span>
               <button type="button" className="text-btn" onClick={() => { demo.reset(); window.location.reload(); }}>Reset</button>
             </div>
           ) : null}
           <div className="side__me">
-            <span className={`avatar${user.role === 'S' ? ' avatar--tag' : ''}`}>{user.role === 'S' ? user.pseudonym?.slice(1, 3) : (user.display_name || '?').replace(/^Dr /, '').slice(0, 1)}</span>
+            <span className={`avatar${user.role === 'S' ? ' avatar--tag' : ''}`}>{user.role === 'S' ? user.pseudonym?.slice(1, 3) : initials(user.display_name || '?')}</span>
             <span className="side__who"><b className={user.role === 'S' ? 'mono' : ''}>{who}</b><span>{ROLE[user.role]}</span></span>
             <button type="button" className="icon-btn" onClick={signOut} aria-label="Sign out" title="Sign out"><Icon name="out" /></button>
           </div>
