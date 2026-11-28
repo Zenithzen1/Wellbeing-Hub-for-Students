@@ -148,18 +148,40 @@ def _record(row: Counsellor) -> CounsellorRecord:
     return CounsellorRecord(row.id, row.account_id, row.display_name, specialties)
 
 
-def _tree_write(db: Session, counsellor_id: int, fn: Callable[[], None]) -> None:
-    """Run an in-memory update after a commit. If it fails, disk wins: reload this counsellor's trees."""
+# Write-through: every change is committed to the database first, then copied into the tree.
+# If the tree update ever fails, the database is right, so we rebuild that counsellor's trees from it.
+
+def _tree(which: str, counsellor_id: int) -> IntervalTree:
+    """The counsellor's "open" tree (windows) or "busy" tree (sessions, blocks, holds)."""
+    return _open.get(counsellor_id) if which == "open" else _busy.get(counsellor_id)
+
+
+def _tree_add(db: Session, counsellor_id: int, which: str, start: int, end: int, value) -> None:
+    """Add the half-open interval [start, end) (epoch seconds) to a tree. Stored closed as (start, end - 1)."""
     try:
         with _lock:
-            fn()
+            _tree(which, counsellor_id).insert(start, end - 1, value)
     except Exception:
-        log.exception("interval tree update failed for counsellor %s; reloading it from the database",
-                      counsellor_id)
-        o, b = _load(db, counsellor_id)
+        _reload(db, counsellor_id)
+
+
+def _tree_remove(db: Session, counsellor_id: int, which: str, start: int, end: int) -> None:
+    """Remove [start, end) from a tree, if it is there."""
+    try:
         with _lock:
-            _open.put(counsellor_id, o)
-            _busy.put(counsellor_id, b)
+            tree = _tree(which, counsellor_id)
+            if (start, end - 1) in tree:
+                tree.delete(start, end - 1)
+    except Exception:
+        _reload(db, counsellor_id)
+
+
+def _reload(db: Session, counsellor_id: int) -> None:
+    log.exception("interval tree update failed for counsellor %s; reloading it from the database", counsellor_id)
+    open_tree, busy_tree = _load(db, counsellor_id)
+    with _lock:
+        _open.put(counsellor_id, open_tree)
+        _busy.put(counsellor_id, busy_tree)
 
 
 # --- counsellors -------------------------------------------------------------------------------------
@@ -243,7 +265,8 @@ def _free_between(counsellor_id: int, lo: int, hi: int, need: int, limit: int | 
 def _fill(out: list, gap_start: int, gap_end: int, need: int, now: int) -> None:
     """Every quarter-hour start t in the gap with t > now and t + need <= gap_end."""
     t = max(gap_start, now + 1)
-    t = -(-t // GRID_SECONDS) * GRID_SECONDS  # round up to the next quarter hour
+    if t % GRID_SECONDS != 0:                  # round up to the next quarter hour
+        t += GRID_SECONDS - t % GRID_SECONDS
     while t + need <= gap_end:
         out.append(t)
         t += GRID_SECONDS
@@ -339,8 +362,7 @@ def _insert_booking(db: Session, counsellor_id: int, pseudonym: str, start: date
         before_commit(row)
     db.commit()
     # A hold for the same time has the same key, so this replaces it.
-    _tree_write(db, counsellor_id, lambda: _busy.get(counsellor_id).insert(_ts(start), _ts(end) - 1,
-                                                                            ("booking", row.id)))
+    _tree_add(db, counsellor_id, "busy", _ts(start), _ts(end), ("booking", row.id))
     return row
 
 
@@ -383,21 +405,13 @@ def book(db: Session, pseudonym: str, counsellor_id: int, start: datetime, reaso
 
 def hold(db: Session, counsellor_id: int, start: datetime, end: datetime, offer_id: int) -> None:
     """Keep [start, end) busy while it is offered to someone; re-holding the same time moves it to a new offer."""
-    _tree_write(db, counsellor_id, lambda: _busy.get(counsellor_id).insert(_ts(start), _ts(end) - 1,
-                                                                            ("hold", offer_id)))
+    _tree_add(db, counsellor_id, "busy", _ts(start), _ts(end), ("hold", offer_id))
     notify.publish(notify.BROADCAST, "slot_taken", {"counsellor_id": counsellor_id, "start": start, "end": end})
 
 
 def release(db: Session, counsellor_id: int, start: datetime, end: datetime) -> None:
     """Nobody on the waitlist took the time: show it to everyone."""
-    key = (_ts(start), _ts(end) - 1)
-
-    def drop():
-        tree = _busy.get(counsellor_id)
-        if key in tree:
-            tree.delete(*key)
-
-    _tree_write(db, counsellor_id, drop)
+    _tree_remove(db, counsellor_id, "busy", _ts(start), _ts(end))
     notify.publish(notify.BROADCAST, "slot_freed", {"counsellor_id": counsellor_id, "start": start, "end": end})
 
 
@@ -442,18 +456,11 @@ def cancel(db: Session, booking_id: int, *, pseudonym: str | None = None,
     if row.start <= clock.now():
         raise ValueError("this session has already started")
     rec = get_counsellor(row.counsellor_id)
-    key = (_ts(row.start), _ts(row.end) - 1)
-
-    def drop():
-        tree = _busy.get(rec.id)
-        if key in tree:
-            tree.delete(*key)
-
     with lock_for(rec.id):
         row.status = "cancelled"
         row.cancelled_by = "student" if pseudonym is not None else "counsellor"
         db.commit()
-        _tree_write(db, rec.id, drop)
+        _tree_remove(db, rec.id, "busy", _ts(row.start), _ts(row.end))
         notify.cancel_session_reminders(db, row.id)
         offered = waitlist.offer_freed(db, rec.id, row.start, row.end)
 
@@ -502,9 +509,9 @@ def add_availability(db: Session, counsellor_id: int, start: datetime, end: date
         raise ValueError("that time has already passed")
     s, e = _ts(start), _ts(end)
     with lock_for(rec.id):
+        which = "open" if kind == "open" else "busy"
         with _lock:
-            tree = _open.get(rec.id) if kind == "open" else _busy.get(rec.id)
-            clash = tree.find_overlap(s, e - 1)
+            clash = _tree(which, rec.id).find_overlap(s, e - 1)
         if clash is not None:
             raise SlotTaken("that overlaps another open window" if kind == "open"
                             else "that overlaps a session or other blocked time")
@@ -512,7 +519,7 @@ def add_availability(db: Session, counsellor_id: int, start: datetime, end: date
         db.add(row)
         db.commit()
         value = row.id if kind == "open" else ("blocked", row.id)
-        _tree_write(db, rec.id, lambda: (_open if kind == "open" else _busy).get(rec.id).insert(s, e - 1, value))
+        _tree_add(db, rec.id, which, s, e, value)
     event = "slot_freed" if kind == "open" else "slot_taken"
     notify.publish(notify.BROADCAST, event, {"counsellor_id": rec.id, "start": start, "end": end})
     return row
@@ -524,24 +531,18 @@ def remove_availability(db: Session, counsellor_id: int, availability_id: int) -
     if row is None or row.counsellor_id != counsellor_id:
         raise AvailabilityNotFound(availability_id)
     s, e = _ts(row.start), _ts(row.end)
-    key = (s, e - 1)
     kind = row.kind
     with lock_for(counsellor_id):
         if kind == "open":
+            # every busy interval inside the window; a session or an offer hold means it can't go
             with _lock:
                 busy = _busy.get(counsellor_id)
-                taken = [k for k in busy.query(s, e - 1) if busy.search(k)[0] in ("booking", "hold")]
-            if taken:
-                raise SlotTaken("this window still has sessions; cancel them first")
+                for key in busy.query(s, e - 1):
+                    if busy.search(key)[0] in ("booking", "hold"):
+                        raise SlotTaken("this window still has sessions; cancel them first")
         db.delete(row)
         db.commit()
-
-        def drop():
-            tree = (_open if kind == "open" else _busy).get(counsellor_id)
-            if key in tree:
-                tree.delete(*key)
-
-        _tree_write(db, counsellor_id, drop)
+        _tree_remove(db, counsellor_id, "open" if kind == "open" else "busy", s, e)
     event = "slot_taken" if kind == "open" else "slot_freed"
     notify.publish(notify.BROADCAST, event, {"counsellor_id": counsellor_id, "start": row.start, "end": row.end})
 
