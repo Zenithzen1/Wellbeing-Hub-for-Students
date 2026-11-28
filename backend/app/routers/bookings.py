@@ -21,7 +21,7 @@ from app.schemas import (
     FreeDayOut,
     SessionOut,
 )
-from app.services import booking
+from app.services import booking, identity
 
 router = APIRouter(tags=["bookings"])
 
@@ -63,11 +63,11 @@ async def free_time(
 @router.post("/bookings", response_model=BookingOut, status_code=201)
 async def create_booking(body: BookingIn, user: CurrentUser = Depends(require_role("S")),
                          db: Session = Depends(get_db)):
-    # TODO(Rithwik): when body.reveal is ticked, pass identity_blob = the student's name and email
-    # encrypted with the server key (identity service).
     try:
+        # "share my name": the student's name and email, encrypted with the server key, on this booking only
+        blob = identity.identity_blob(db, user.account_id) if body.reveal else None
         row = booking.book(db, user.pseudonym, body.counsellor_id, body.start, body.reason, body.first_visit,
-                           body.reveal, identity_blob=None)
+                           body.reveal, identity_blob=blob)
     except booking.CounsellorNotFound:
         raise HTTPException(status_code=404, detail="Counsellor not found")
     except booking.SlotTaken as exc:
@@ -145,9 +145,8 @@ async def remove_availability(availability_id: int, user: CurrentUser = Depends(
 async def my_sessions(day: date | None = Query(None, alias="date", description="Dubai-time date; default today"),
                       user: CurrentUser = Depends(require_role("C")), db: Session = Depends(get_db)):
     """Sessions that day: pseudonym tag and reason; a name only where the student opted in."""
-    # TODO(Rithwik): decrypt row.enc_identity for revealed bookings and pass it as identity=.
     rows = booking.sessions_on(db, _my_counsellor_id(user), day or _today())
-    return [booking.to_session_dict(row) for row in rows]
+    return [booking.to_session_dict(row, identity.reveal_text(row.enc_identity)) for row in rows]
 
 
 @router.patch("/bookings/{booking_id}", response_model=SessionOut)
@@ -160,4 +159,4 @@ async def mark_booking(booking_id: int, body: BookingPatch, user: CurrentUser = 
         raise HTTPException(status_code=404, detail="Booking not found")
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
-    return booking.to_session_dict(row)
+    return booking.to_session_dict(row, identity.reveal_text(row.enc_identity))

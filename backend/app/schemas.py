@@ -200,3 +200,149 @@ class DeadLetterOut(BaseModel):
     attempts: int
     last_attempt_at: datetime
     last_error: str | None
+
+
+# --- auth and identity (Rithwik) --------------------------------------------------------------
+
+
+class RegisterIn(BaseModel):
+    email: str = Field(min_length=3, max_length=254)
+    password: str = Field(min_length=8, max_length=128)
+    name: str = Field(default="", max_length=100)  # optional; shared only when the student opts in
+
+
+class LoginIn(BaseModel):
+    email: str = Field(min_length=3, max_length=254)
+    password: str = Field(min_length=1, max_length=128)
+
+
+class MeOut(BaseModel):
+    account_id: int
+    role: str                       # "S" | "C" | "A" | "K"
+    display_name: str               # "Student #47C32E" for students
+    email: str | None = None
+    pseudonym: str | None = None    # students only
+    tag: str | None = None          # students only, e.g. "#47C32E"
+    counsellor_id: int | None = None
+
+
+class RevealIn(BaseModel):
+    target: str = Field(min_length=1, max_length=80, description="full pseudonym, or a display tag like #47C32E")
+    reason: str = Field(min_length=10, max_length=2000)
+    private_key: str = Field(min_length=64, max_length=64, description="the custodian's vault private key (hex)")
+
+
+class RevealOut(BaseModel):
+    pseudonym: str
+    tag: str
+    email: str
+    audit_id: int
+
+
+class AuditOut(BaseModel):
+    id: int
+    at: datetime
+    actor_id: int
+    actor: str
+    action: str
+    target: str
+    reason: str
+
+
+# --- recommendations (Rithwik) ------------------------------------------------------------------
+
+
+class ResourceIn(BaseModel):
+    title: str = Field(min_length=1, max_length=200)
+    kind: Literal["article", "audio", "video"]
+    url: str = Field(min_length=1, max_length=500)
+    tags: list[str] = Field(default_factory=list, max_length=15)
+
+
+class ResourceOut(BaseModel):
+    id: int
+    item: str          # graph node id, "r:<id>"
+    title: str
+    kind: str
+    url: str
+    tags: list[str]
+    created_at: datetime
+    my: list[str] = []  # students: their own engagement kinds with it ("saved", ...)
+
+
+class InterestsIn(BaseModel):
+    tags: list[str] = Field(max_length=30)
+
+
+class EngagementIn(BaseModel):
+    item: str = Field(pattern=r"^[re]:\d+$", description='"r:<resource id>" or "e:<event id>"')
+    kind: Literal["attended", "saved", "finished"]
+
+
+class RecommendationOut(BaseModel):
+    item: str
+    type: Literal["resource", "event"]
+    id: int
+    title: str
+    tags: list[str]
+    reason: str        # never points at individuals, e.g. "Matches your interest: Exams"
+    score: float
+    resource_kind: str | None = None
+    url: str | None = None
+    start: datetime | None = None
+    end: datetime | None = None
+    location: str | None = None
+
+
+class RecommendationsOut(BaseModel):
+    cold_start: bool   # true: no interests yet, so the page should ask for them
+    items: list[RecommendationOut]
+
+
+# --- analytics (Rithwik) ---------------------------------------------------------------------------
+# Every count is an int >= 5 or 0, or "<5" (suppressed), or "hidden" (complementary suppression).
+
+Count = int | str
+
+
+class TableOut(BaseModel):
+    rows: list[str]
+    cols: list[str]
+    cells: list[list[Count]]
+    totals: list[Count] | None = None
+    grand_total: Count | None = None
+
+
+class OutcomeWeekOut(BaseModel):
+    week: str
+    cancel_rate: float | str | None
+    no_show_rate: float | str | None
+
+
+class WaitlistWeekOut(BaseModel):
+    week: str
+    joined: Count
+    offers: Count
+    median_wait_hours: float | None
+
+
+class UtilisationOut(BaseModel):
+    counsellor_id: int
+    counsellor: str
+    sessions: Count
+    available_hours: float
+    utilisation: float | None
+
+
+class AnalyticsOut(BaseModel):
+    first_day: date
+    last_day: date
+    k: int
+    weeks: list[str]
+    bookings_by_reason: TableOut
+    outcomes: list[OutcomeWeekOut]
+    utilisation: list[UtilisationOut]
+    waitlist_now: TableOut
+    waitlist_weeks: list[WaitlistWeekOut]
+    events_by_tag: TableOut
+    peak_demand: TableOut

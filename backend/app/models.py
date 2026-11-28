@@ -10,7 +10,7 @@ carry the HMAC pseudonym only.
 
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, TypeDecorator, UniqueConstraint
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text, TypeDecorator, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db import Base
@@ -36,7 +36,46 @@ class UTCDateTime(TypeDecorator):
         return None if value is None else value.replace(tzinfo=timezone.utc)
 
 
-# TODO(all, Day 1): define the other tables here.
+# --- Identity zone (plan section 3; owner: Rithwik) ---------------------------------------
+
+class Account(Base):
+    """A login. role: "S" student, "C" counsellor, "A" department admin, "K" custodian.
+
+    Nothing here links to a pseudonym: a student's pseudonym is recomputed from the email with
+    the HMAC key at login, and only the JWT carries it.
+    """
+
+    __tablename__ = "accounts"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    email: Mapped[str] = mapped_column(String(254), unique=True)  # lower-cased and trimmed
+    pw_hash: Mapped[str] = mapped_column(String(200))             # argon2
+    role: Mapped[str] = mapped_column(String(1))
+    name: Mapped[str] = mapped_column(String(100), default="")    # optional; shared only on opt-in reveal
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime)
+
+
+class IdentityVault(Base):
+    """pseudonym -> email sealed with the custodian's public key (PyNaCl SealedBox).
+    The server can write rows but cannot read them; only break-glass with the private key can."""
+
+    __tablename__ = "identity_vault"
+
+    pseudonym: Mapped[str] = mapped_column(String(64), primary_key=True)
+    sealed_email: Mapped[str] = mapped_column(Text)  # base64
+
+
+class AuditLog(Base):
+    """Append-only. Every break-glass attempt is written here before any vault row is opened."""
+
+    __tablename__ = "audit_log"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    actor_id: Mapped[int] = mapped_column(ForeignKey("accounts.id"), index=True)
+    action: Mapped[str] = mapped_column(String(32))
+    target: Mapped[str] = mapped_column(String(80))
+    reason: Mapped[str] = mapped_column(Text, default="")
+    at: Mapped[datetime] = mapped_column(UTCDateTime, index=True)
 
 
 # --- Counsellors, availability, bookings (plan section 4; owner: Aditya) -------------------
@@ -179,6 +218,44 @@ class ItemTag(Base):
 
     item: Mapped[str] = mapped_column(String(32), primary_key=True)
     tag_id: Mapped[int] = mapped_column(ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True)
+
+
+# --- Recommendations (plan section 8; owner: Rithwik) -----------------------------------
+
+class Resource(Base):
+    """An article, audio track or video. Its tags are item_tags rows with item "r:<id>"."""
+
+    __tablename__ = "resources"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    title: Mapped[str] = mapped_column(String(200))
+    kind: Mapped[str] = mapped_column(String(16))  # article | audio | video
+    url: Mapped[str] = mapped_column(String(500))
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime)
+
+
+class Interest(Base):
+    """A tag a student picked at onboarding or in settings (graph edge student - tag, weight 1.0)."""
+
+    __tablename__ = "interests"
+
+    pseudonym: Mapped[str] = mapped_column(String(64), primary_key=True)
+    tag_id: Mapped[int] = mapped_column(ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True)
+    weight: Mapped[float] = mapped_column(Float, default=1.0)
+    at: Mapped[datetime] = mapped_column(UTCDateTime)
+
+
+class Engagement(Base):
+    """A student attended, saved or finished an item (graph edge student - item, weight 1.0)."""
+
+    __tablename__ = "engagements"
+    __table_args__ = (UniqueConstraint("pseudonym", "item", "kind"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    pseudonym: Mapped[str] = mapped_column(String(64), index=True)
+    item: Mapped[str] = mapped_column(String(32), index=True)  # "r:<id>" or "e:<id>"
+    kind: Mapped[str] = mapped_column(String(16))              # attended | saved | finished
+    at: Mapped[datetime] = mapped_column(UTCDateTime)
 
 
 # --- Notifications (plan section 7; owner: Divyam) --------------------------------------

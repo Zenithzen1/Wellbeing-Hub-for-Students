@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.deps import CurrentUser, get_db, require_role
 from app.schemas import BookingOut, OfferAcceptIn, WaitlistCountsOut, WaitlistIn, WaitlistOut
-from app.services import booking, waitlist
+from app.services import booking, identity, waitlist
 
 router = APIRouter(tags=["waitlist"])
 
@@ -45,9 +45,9 @@ async def accept(offer_id: int, body: OfferAcceptIn | None = Body(None),
                  user: CurrentUser = Depends(require_role("S")), db: Session = Depends(get_db)):
     """Book the offered time. You leave all your other waitlists."""
     body = body or OfferAcceptIn()
-    # TODO(Rithwik): identity_blob for body.reveal, as in POST /bookings.
     try:
-        row = waitlist.accept(db, user.pseudonym, offer_id, body.reason, body.reveal, identity_blob=None)
+        blob = identity.identity_blob(db, user.account_id) if body.reveal else None
+        row = waitlist.accept(db, user.pseudonym, offer_id, body.reason, body.reveal, identity_blob=blob)
     except waitlist.OfferNotFound:
         raise HTTPException(status_code=404, detail="Offer not found")
     except (waitlist.OfferGone, booking.SlotTaken) as exc:

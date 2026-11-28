@@ -13,6 +13,7 @@ Write-through: every change commits to the database first, then updates the stru
 Errors: EventNotFound (-> 404), RegistrationConflict (-> 409), ValueError (-> 400).
 """
 
+import logging
 import math
 import threading
 from dataclasses import dataclass
@@ -27,6 +28,8 @@ from app.models import Event, ItemTag, Registration, Tag
 from app.services import notify
 
 REMINDER_BEFORE = timedelta(hours=1)
+
+log = logging.getLogger(__name__)
 
 
 class EventNotFound(KeyError):
@@ -60,6 +63,21 @@ _records = HashMap()  # event id -> EventRecord (finds the tree key from an id)
 _queues = HashMap()   # event id -> Queue of (pseudonym, position)
 _waiting = HashMap()  # (event id, pseudonym) -> position of the live queue entry
 _next_position = 1    # global, increasing: orders waitlisted registrations
+_listeners = []       # fn(event_id, tags or None), called after a create / update / remove commits
+
+
+def on_change(fn) -> None:
+    """Call fn(event_id, tags) after an event is created or edited and fn(event_id, None) after it is
+    deleted. The recommendations graph uses this to keep its workshop nodes in step."""
+    _listeners.append(fn)
+
+
+def _changed(event_id: int, tags: tuple[str, ...] | None) -> None:
+    for fn in _listeners:
+        try:
+            fn(event_id, tags)
+        except Exception:  # a listener must never break the event write, which is already committed
+            log.exception("event change listener failed for event %s", event_id)
 
 
 # --- startup ----------------------------------------------------------------------------------
@@ -192,6 +210,7 @@ def create(db: Session, title: str, start: datetime, end: datetime, location: st
     with _lock:
         _records.put(rec.id, rec)
         _tree.insert(rec.key, rec)
+    _changed(rec.id, names)
     return rec
 
 
@@ -229,6 +248,7 @@ def update(db: Session, event_id: int, title: str | None = None, start: datetime
             notify.cancel(db, _reminder_ref(event_id, pse))
             _schedule_reminder(db, rec, pse)
     _promote(db, rec)
+    _changed(event_id, names)
     return rec
 
 
@@ -251,6 +271,7 @@ def remove(db: Session, event_id: int) -> None:
                 pse, _ = queue.dequeue()
                 if _waiting.contains((event_id, pse)):
                     _waiting.remove((event_id, pse))
+    _changed(event_id, None)
 
 
 def _registered(db: Session, event_id: int) -> list[str]:

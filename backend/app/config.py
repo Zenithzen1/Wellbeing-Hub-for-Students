@@ -18,8 +18,11 @@ class Settings(BaseSettings):
 
     # Secrets: the dev defaults below are placeholders and must be replaced in .env.
     hmac_key: str = "dev-only-hmac-key-change-me"        # email -> pseudonym (HMAC-SHA256)
-    jwt_secret: str = "dev-only-jwt-secret-change-me"    # session cookie signing
-    vault_public_key: str = ""                           # SealedBox public key (custodian keeps the private one)
+    jwt_secret: str = "dev-only-jwt-secret-change-me-now"  # session cookie signing
+    vault_public_key: str = ""                           # SealedBox public key, hex (custodian keeps the private one)
+
+    session_hours: float = 8.0      # JWT lifetime
+    cookie_secure: bool = False     # True once served over HTTPS (campus design); False for http://localhost
 
     scheduler_interval_seconds: float = 15.0
 
